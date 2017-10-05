@@ -1,0 +1,56 @@
+{
+  "name": "flowi",
+  "version": "0.1.0",
+  "author": "Rafa Mel",
+  "description": "Concatenate Joi validations, or custom function validations, for the same object or object key. Personalize the output error message for each of those validations if required.",
+  "homepage": "https://github.com/rafamel/flowi",
+  "main": "./lib/index",
+  "scripts": {
+    "lint": "./node_modules/.bin/eslint lib/*.js",
+    "test": "tape ./test/index.js | tap-spec",
+    "coverage": "istanbul cover tape ./test/index.js"
+  },
+  "contributors": [
+    {
+      "name": "Rafa Mel"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rafamel/flowi"
+  },
+  "peerDependencies": {
+    "joi": "^11.1.1",
+    "is-promise": "^2.1.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "validation",
+    "validate",
+    "Joi"
+  ],
+  "bugs": {
+    "url": "https://github.com/rafamel/flowi/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/rafamel/flowi/raw/master/LICENSE"
+    }
+  ],
+  "devDependencies": {
+    "eslint": "^4.7.2",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1",
+    "is-promise": "^2.1.0",
+    "istanbul": "^0.4.5",
+    "joi": "^11.1.1",
+    "mocha": "^3.5.3",
+    "tap-spec": "^4.1.1",
+    "tape-async": "^2.3.0"
+  },
+  "dependencies": {}
+}
