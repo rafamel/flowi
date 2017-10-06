@@ -67,7 +67,18 @@ test('2. KeyFlow() and keyflow.and() take (only) allowed types', (t) => {
     t.end();
 });
 
-test('3. Keyflow, Validate, Pass/Not pass', (t) => {
+
+test('3. flow.validate() doesn\'t error out with an empty stack', (t) => {
+    const id = ij();
+
+    let err;
+    try { KeyFlow().validate({ a: 1, b: 2}) } catch (e) { err = e };
+
+    t.equal(err, undefined, id());
+    t.end();
+});
+
+test('4. Keyflow, Validate, Pass/Not pass', (t) => {
     const id = ij();
 
     let val = KeyFlow({
@@ -130,7 +141,7 @@ test('3. Keyflow, Validate, Pass/Not pass', (t) => {
     t.end();
 });
 
-test('4. flow.validate(), Function', (t) => {
+test('5. flow.validate(), Function', (t) => {
     const id = ij();
 
     {   id(1, 'Empty return function validation returns value and null error')
@@ -146,7 +157,7 @@ test('4. flow.validate(), Function', (t) => {
     t.end();
 });
 
-test('5. flow.validate(), Concatenation', (t) => {
+test('6. flow.validate(), Concatenation', (t) => {
     const id = ij();
     const val = KeyFlow({
         a: Joi.string().max(6)
@@ -161,7 +172,7 @@ test('5. flow.validate(), Concatenation', (t) => {
 });
 
 
-test('6. Private keyflow._knownKeys()', (t) => {
+test('7. Private keyflow._knownKeys()', (t) => {
     const val = KeyFlow({
         a: Joi.string(),
         b: Joi.number(),
@@ -198,7 +209,7 @@ test('6. Private keyflow._knownKeys()', (t) => {
 });
 
 
-test('7. keyflow.validate() unknown', (t) => {
+test('8. keyflow.validate() unknown', (t) => {
     const id = ij();
     const val = KeyFlow({ a: Joi.number() }).and({ b: Joi.number() });
 
@@ -221,7 +232,7 @@ test('7. keyflow.validate() unknown', (t) => {
     t.end();
 });
 
-test('8. flow.validate(), Label, Key, & Error', (t) => {
+test('9. flow.validate(), Label, Key, & Error', (t) => {
     const id = ij();
     const getErr = (err) => {
         if (!err) return;
@@ -301,7 +312,7 @@ test('8. flow.validate(), Label, Key, & Error', (t) => {
     t.end();
 });
 
-test('9. keyflow.validate(), Error message', (t) => {
+test('10. keyflow.validate(), Error message', (t) => {
     const id = ij();
 
     let val = KeyFlow(
@@ -324,7 +335,7 @@ test('9. keyflow.validate(), Error message', (t) => {
     t.end();
 });
 
-test('10. keyflow.validate(), keyflow.convert()', (t) => {
+test('11. keyflow.validate(), keyflow.convert()', (t) => {
     const id = ij();
 
     const val = KeyFlow(obj => {
@@ -349,7 +360,7 @@ test('10. keyflow.validate(), keyflow.convert()', (t) => {
     t.end();
 });
 
-test('11. keyflow.require()', (t) => {
+test('12. keyflow.require()', (t) => {
     const id = ij();
 
     {   id(1);
@@ -373,7 +384,7 @@ test('11. keyflow.require()', (t) => {
     t.end();
 });
 
-test('12. keyflow.forbid()', (t) => {
+test('13. keyflow.forbid()', (t) => {
     const id = ij();
 
     {   id(1);

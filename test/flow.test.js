@@ -95,7 +95,18 @@ test('3. flow.and() adds validations', (t) => {
     t.end();
 });
 
-test('4. Flow, Validate & Attempt, Basic Pass/Not pass', (t) => {
+
+test('4. flow.validate() doesn\'t error out with an empty stack', (t) => {
+    const id = ij();
+
+    let err;
+    try { Flow().validate('string') } catch (e) { err = e };
+
+    t.equal(err, undefined, id());
+    t.end();
+});
+
+test('5. Flow, Validate & Attempt, Basic Pass/Not pass', (t) => {
     const vals = [
         { validation: Flow(Joi.string()),
             name: 'Joi' },
@@ -134,7 +145,7 @@ test('4. Flow, Validate & Attempt, Basic Pass/Not pass', (t) => {
     t.end();
 });
 
-test('5. flow.validate(), Function', (t) => {
+test('6. flow.validate(), Function', (t) => {
     const id = ij();
 
     {   id(1, 'Empty return function');
@@ -150,7 +161,7 @@ test('5. flow.validate(), Function', (t) => {
     t.end();
 });
 
-test('6. flow.validate(), Concatenation', (t) => {
+test('7. flow.validate(), Concatenation', (t) => {
     const id = ij();
 
     const val = Flow()
@@ -171,7 +182,7 @@ test('6. flow.validate(), Concatenation', (t) => {
     t.end();
 });
 
-test('7. flow.validate(), Label & Error', (t) => {
+test('8. flow.validate(), Label & Error', (t) => {
     const id = ij();
 
     const getErr = (err) => {
@@ -238,7 +249,7 @@ test('7. flow.validate(), Label & Error', (t) => {
     t.end();
 });
 
-test('8. flow.validate(), Label, Error, Error message', (t) => {
+test('9. flow.validate(), Label, Error, Error message', (t) => {
     const id = ij();
 
     let val = Flow(Joi.string().label('User'), 'Some error');
@@ -302,7 +313,7 @@ test('8. flow.validate(), Label, Error, Error message', (t) => {
     t.end();
 });
 
-test('9. flow.validate(), flow.convert()', (t) => {
+test('10. flow.validate(), flow.convert()', (t) => {
     const id = ij();
 
     {   id(1, 'Joi convert, pass');
@@ -372,7 +383,7 @@ test('9. flow.validate(), flow.convert()', (t) => {
     t.end();
 });
 
-test('10. Async Flow', async (t) => {
+test('11. Async Flow', async (t) => {
     const id = ij();
 
     {   id(1, 'Sync doesn\'t take async functions');
