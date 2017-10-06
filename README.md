@@ -1,5 +1,9 @@
 # Flowi
 
+[![Build Status](https://travis-ci.org/rafamel/flowi.svg?branch=master)](https://travis-ci.org/rafamel/flowi)
+![Dependencies](https://david-dm.org/rafamel/flowi.svg)
+[![MIT license](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/rafamel/flowi/blob/master/LICENSE)
+
 **Concatenate `Joi` validations, or custom function validations, for the same object or object key. Personalize the output error message for each of those validations.**`
 
 *Flowi* was initially built to validate requests on Express and expose only *explicit* error messages to the user directly from the server when each validation fails.
