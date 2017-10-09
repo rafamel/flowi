@@ -68,7 +68,7 @@ test('2. KeyFlow() and keyflow.and() take (only) allowed types', (t) => {
 });
 
 
-test('3. flow.validate() doesn\'t error out with an empty stack', (t) => {
+test('3. keyflow.validate() doesn\'t error out with an empty stack', (t) => {
     const id = ij();
 
     let err;
@@ -141,7 +141,7 @@ test('4. Keyflow, Validate, Pass/Not pass', (t) => {
     t.end();
 });
 
-test('5. flow.validate(), Function', (t) => {
+test('5. keyflow.validate(), Function', (t) => {
     const id = ij();
 
     {   id(1, 'Empty return function validation returns value and null error')
@@ -157,7 +157,7 @@ test('5. flow.validate(), Function', (t) => {
     t.end();
 });
 
-test('6. flow.validate(), Concatenation', (t) => {
+test('6. keyflow.validate(), Concatenation', (t) => {
     const id = ij();
     const val = KeyFlow({
         a: Joi.string().max(6)
@@ -172,7 +172,7 @@ test('6. flow.validate(), Concatenation', (t) => {
 });
 
 
-test('7. Private keyflow._knownKeys()', (t) => {
+test('7. Private keyflow._knownKeys', (t) => {
     const val = KeyFlow({
         a: Joi.string(),
         b: Joi.number(),
@@ -204,7 +204,7 @@ test('7. Private keyflow._knownKeys()', (t) => {
     }))).and(x => { return; });
 
     const res = ['a', 'b', 'c', 'f', 'g', 'h', 'k', 'l', 'm', 'p', 'q', 'r'];
-    t.deepEqual(val._knownKeys().sort(), res);
+    t.deepEqual(val._knownKeys.sort(), res);
     t.end();
 });
 
@@ -338,22 +338,72 @@ test('10. keyflow.validate(), Error message', (t) => {
 test('11. keyflow.validate(), keyflow.convert()', (t) => {
     const id = ij();
 
-    const val = KeyFlow(obj => {
-        return { value: { a: 'hello' }, error: null };
-    }).and({
-        a: Joi.string().uppercase()
-    });
-
     {   id(1);
-        const res = val.validate({ a: 'ABCD' });
+        const val = KeyFlow()
+            .and({
+                a: Flow(Joi.string().uppercase()).convert()
+            });
+        const res = val.validate({ a: 'abcd' });
 
         t.equal(res.value.a, 'ABCD', id());
         t.equal(res.error, null, id());
     }
     {   id(2);
-        const res = val.convert().validate({ a: 'ABCD' });
+        const val = KeyFlow()
+            .and(obj => {
+                return { value: { a: 'hello' }, error: null };
+            }).and({
+                a: Joi.string().uppercase()
+            });
+        const res = val.validate({ a: 'ABCD' });
+
+        t.equal(res.value.a, 'ABCD', id());
+        t.equal(res.error, null, id());
+    }
+    {   id(3);
+        const val = KeyFlow()
+            .and(obj => {
+                return { value: { a: 'hello' }, error: null };
+            })
+            .and({
+                a: Flow(Joi.string().uppercase()).convert()
+            })
+            .convert();
+        const res = val.validate({ a: 'ABCD' });
 
         t.equal(res.value.a, 'HELLO', id());
+        t.equal(res.error, null, id());
+    }
+    {   id(4);
+        const val = KeyFlow()
+            .and(obj => {
+                return { value: { a: 'hello' }, error: null };
+            })
+            .and({
+                a: Joi.string().uppercase()
+            })
+            .convert();
+        const res = val.validate({ a: 'ABCD' });
+
+        t.equal(res.value.a, 'HELLO', id());
+        t.equal(res.error, null, id());
+    }
+    {   id(5);
+        const val = KeyFlow(KeyFlow({
+            a: Joi.string().uppercase()
+        })).convert();
+        const res = val.validate({ a: 'abcd' });
+
+        t.equal(res.value.a, 'abcd', id());
+        t.not(res.error, null, id());
+    }
+    {   id(6);
+        const val = KeyFlow(KeyFlow({
+            a: Joi.string().uppercase()
+        }).convert());
+        const res = val.validate({ a: 'abcd' });
+
+        t.equal(res.value.a, 'ABCD', id());
         t.equal(res.error, null, id());
     }
 

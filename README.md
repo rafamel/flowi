@@ -6,7 +6,7 @@
 [![Issues](https://img.shields.io/github/issues/rafamel/flowi.svg)]()
 [![License](https://img.shields.io/github/license/rafamel/flowi.svg)](https://github.com/rafamel/flowi/blob/master/LICENSE)
 
-**Concatenate `Joi` validations, or custom function validations, for the same object or object key. Personalize the output error message for each of those validations.**`
+**Concatenate `Joi` validations, or custom function validations, for the same object or object key. Personalize the output error message for each of those validations.**
 
 *Flowi* was initially built to validate requests on Express and expose only *explicit* error messages to the user directly from the server when each validation fails.
 
@@ -97,7 +97,7 @@ const validationForUsername = Flow(Joi.string().max(6))
 
 #### `flow.convert()`
 
-When `.convert()` is applied to a `flow` object, it will cast types and convert, when possible, instead of failing the validation.
+When `.convert()` is applied to a `flow` object, it will cast types and convert, when possible, instead of failing the validation. It has inner to outer precedence, meaning if an inner `flow` object has conversion active, it will convert for all its validations regardless of the outer `flow` conversion setting; and if an inner `flow` doesn't have conversion active, it won't convert even if the outer `flow` does.
 
 ```javascript
 // This will effectively trim the string if it isn't
@@ -106,6 +106,10 @@ const aValidation = Flow(Joi.string().trim()).convert();
 // to uppercase (as it only applies to `aValidation`),
 // so it will fail if the string is not all in uppercase
 const bValidation = Flow(aValidation).and(Joi.string().uppercase());
+// This will not convert to uppercase the string either, as the
+// Flow object the Joi validation belongs to doesn't have
+// conversion active (inner to outer precendence).
+const cValidation = Flow(Flow(Joi.string().uppercase())).convert()
 ```
 
 #### `flow.validate(toValidate)`
@@ -118,11 +122,11 @@ Returns a an object with two keys:
 
 #### `flow.attempt(toValidate)`
 
-Same as `flow.validate()`, but it will return the `value` if the validation is successful, or throw the `error` if any occurs.
+Same as [`flow.validate()`](#flowvalidatetovalidate), but it will return the `value` if the validation is successful, or throw the `error` if any occurs.
 
 #### `flow.validateAsync(toValidate)` & `flow.attemptAsync(toValidate)`
 
-Same as `flow.validate()` and `flow.attempt()`, but will return a promise. Their usage it's a must if any async/promise-returning function was fed into a `flow` object as a [custom function](#custom-function);
+Same as [`flow.validate()`](#flowvalidatetovalidate) and [`flow.attempt()`](#flowattempttovalidate), but will return a promise. Their usage is a must if any async/promise-returning function was fed into a `flow` object as a [custom function](#custom-function);
 
 ## KeyFlow
 
@@ -153,7 +157,7 @@ Create a new `flow` object by `KeyFlow(validation, message)` or `new KeyFlow(val
 
 #### `keyflow.and(validation, message)`
 
-Append a new validation to a `keyflow` oject. Takes the same arguments as `Keyflow()`.
+Append a new validation to a `keyflow` oject. Takes the same arguments as [`Keyflow()`](#keyflowvalidation-message).
 
 ```javascript
 const aValidation = 
@@ -241,22 +245,13 @@ const validation = Keyflow({
 
 #### `keyflow.convert()`
 
-Same as `flow.convert()`. It has inner to outer precedence, meaning if an inner `flow` or `keyflow` object as conversion active, it will convert for the validations of that object - but not for the rest.
-
-```javascript
-// This will effectively trim the string if it isn't
-const aValidation = Flow(Joi.string().trim()).convert();
-// This will trim the string but won't convert 
-// to uppercase (as it only applies to `aValidation`),
-// so it will fail if the string is not all in uppercase
-const bValidation = Flow(aValidation).and(Joi.string().uppercase());
-```
+Same as [`flow.convert()`](#flowconvert). It has inner to outer precedence, meaning if an inner `flow` or `keyflow` object has conversion active, it will convert for the validations of that object regardless of the outer setting. Therefore, `convert()` for a `keyflow` object will only make a difference for direct inner *Joi* and [*custom function*](#custom-function) validations, but not for other inner `flow` or `keyflow` validations unless they are `convert()`ed themselves.
 
 #### `keyflow.validate(toValidate, options)`
 
 - `toValidate`: Object to apply the validation to.
 - `options` (Optional): With keys:
-    - `unknown`: Determines what to do for unknown keys. Valid values are `'disallow'` and `'strip'`. By default, it ignores them. Known keys are all of those that appear in any schema fed to `Keyflow()` or `keyflow.and()`, including those within a `Joi.object()` or inside inner `keyflow`s.
+    - `unknown`: Determines what to do for unknown keys. Valid values are `'disallow'` and `'strip'`. By default, it ignores them. Known keys are all of those that appear in any schema fed to [`Keyflow()`](#keyflowvalidation-message) or [`keyflow.and()`](#keyflowandvalidation-message), including those within a `Joi.object()` or inside inner `keyflow`s.
 
 Returns a an object with two keys, `value` and `error`, in the same fashion as [`flow.validate()`](flowvalidatetovalidate).
 
@@ -283,11 +278,11 @@ validation.validate({ password: 'abc' }, { unknown: 'disallow' });
 
 #### `keyflow.attempt(toValidate, options)`
 
-Same as `keyflow.validate()`, but it will return the `value` if the validation is successful, or throw the `error` if any occurs.
+Same as [`keyflow.validate()`](#keyflowvalidatetovalidate-options), but it will return the `value` if the validation is successful, or throw the `error` if any occurs.
 
 #### `keyflow.validateAsync(toValidate, options)` & `keyflow.attemptAsync(toValidate, options)`
 
-Same as `keyflow.validate()` and `keyflow.attempt()`, but will return a promise. Their usage it's a must if any async/promise-returning function was fed into any of the inner validations as a [custom function](#custom-function);
+Same as [`keyflow.validate()`](#keyflowvalidatetovalidate-options) and [`keyflow.attempt()`](#keyflowattempttovalidate-options), but will return a promise. Their usage is a must if any async/promise-returning function was fed into any of the inner validations as a [custom function](#custom-function);
 
 ## ValidationError
 
@@ -362,7 +357,7 @@ const bValidation = Flow(x => {
 });
 ```
 
-You can always also return the value and, if we chose to, mutate it. In such case, `flow.convert()` or `keyflow.convert()` must be active (otherwise the mutated value will be ignored).
+You can always also return the value and, if we chose to, mutate it. In such case, [`flow.convert()`](#flowconvert) or [`keyflow.convert()`](#keyflowconvert) must be active (otherwise the new value will be ignored).
 
 ```javascript
 // We only activate `convert` for this validation,

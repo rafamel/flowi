@@ -356,24 +356,32 @@ test('10. flow.validate(), flow.convert()', (t) => {
         t.equal(test.value, 'AA', id());
         t.equal(test.error, null, id());
     }
-    {   id(7, 'Concatenation, Mixed convert (1)')
+    {   id(7, 'Concatenation, Failed structure');
+        const test = Flow(Flow(Joi.string().lowercase()))
+            .convert()
+            .validate('AA');
+
+        t.not(test.error, null, id());
+    }
+    {   id(8, 'Concatenation, Mixed convert (1)')
         const test = Flow()
-            .and(Flow(Joi.string().lowercase()).convert(false))
+            .and(Flow(Joi.string().lowercase()))
             .convert()
             .validate(' AAAA ');
 
         t.not(test.error, null, id());
     }
-    {   id(8, 'Concatenation, Mixed convert (2)');
+    {   id(9, 'Concatenation, Mixed convert (2)');
         const test = Flow()
-            .and(Flow(Joi.string().lowercase()).convert(true))
-            .convert(false)
+            .and(Flow(Joi.string().lowercase()).convert())
+            .and(Joi.string().regex(/^ aaaa $/))
             .validate(' AAAA ');
+
         t.equal(test.error, null, id());
     }
-    {   id(9, 'Concatenation, Mixed convert (3)');
+    {   id(10, 'Concatenation, Mixed convert (3)');
         const test = Flow()
-            .and(Flow(Joi.string().lowercase()).convert(true))
+            .and(Flow(Joi.string().lowercase()).convert())
             .and(Joi.string().trim())
             .validate(' AAAA ');
 
