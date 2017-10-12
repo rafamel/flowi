@@ -1,6 +1,6 @@
 {
   "name": "flowi",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Rafa Mel",
   "description": "Concatenate Joi validations or custom function validations. Personalize the output error message for each.",
   "homepage": "https://github.com/rafamel/flowi",
