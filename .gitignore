@@ -1,9 +1,9 @@
 # Project Specific #
 ####################
-_test.js
 
 # Node, Frameworks, Editors #
 #############################
+_test.js
 coverage
 node_modules
 npm-debug.log

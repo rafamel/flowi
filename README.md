@@ -8,7 +8,7 @@
 
 **Concatenate `Joi` validations, or custom function validations, for the same object or object key. Personalize the output error message for each of those validations.**
 
-*Flowi* was initially built to validate requests on Express and expose only *explicit* error messages to the user directly from the server when each validation fails.
+*Flowi* was initially built to validate requests on Express and expose only *explicit* error messages to the user directly from the server when each validation fails. Check [`ValidationError`](#validationerror) to know more.
 
 ## Install
 
@@ -189,7 +189,7 @@ const aValidation =
 // In doing so, we preserve the previous one (`aValidation`)
 // which can be useful to create a general validation that we
 // want to use as base for different cases without mutating the 
-// original one (as we would via `keyflow.and()` to it directly).
+// original one (as we would if we did `aValidation.and()`).
 const bValidation = Flow(aValidation)
     // This new `keyflow.and()` will only apply for `bValidation`,
     // but won't be added to `aValidation`
@@ -217,30 +217,50 @@ const bValidation = KeyFlow(aValidation).and({
 });
 ```
 
-#### `keyflow.require(keys, message)`
+#### `keyflow.use(keys)`
 
-- `keys`: An array of keys to require.
-- `message` (optional): A message to show if any of the required keys are not present.
+- `keys`: An array of keys (as strings) to use. It will strip all other keys from the incoming object. It will also have an effect over [`keyflow.require()`](#keyflowrequirekeys) and [`keyflow.forbid()`](#keyflowforbidkeys).
 
 ```javascript
+const validation = Keyflow({
+    username: Joi.string().min(5).max(10),
+    password: Joi.string().min(10).max(30),
+    email: Joi.string().email()
+}).use(['username', 'password']);
+```
+
+#### `keyflow.require(keys)`
+
+- `keys` (optional): It can be:
+    - An array of keys (as strings) to require.
+    - `undefined`, or a boolean. If `undefined` or `true`, it will require all known keys; if `false`, it will not. Known keys are those defined by [`keyflow.use()`](#keyflowusekeys) or all of those that appear in any schema fed to [`Keyflow()`](#keyflowvalidation-message) or [`keyflow.and()`](#keyflowandvalidation-message), including those within a `Joi.object()` or inside inner `keyflow`s.
+
+```javascript
+// Keys 'username' and 'password' are required
 const validation = Keyflow({
     username: Joi.string().min(5).max(10),
     password: Joi.string().min(10).max(30),
     email: Joi.string().email()
 }).require(['username', 'password']);
+// All known keys are now required
+validation.require();
 ```
 
-#### `keyflow.forbid(keys, message)`
+#### `keyflow.forbid(keys)`
 
-- `keys`: An array of keys to forbid.
-- `message` (optional): A message to show if any of the forbidden keys are present.
+- `keys` (optional): It can be:
+    - An array of keys (as strings) to forbid.
+    - `undefined`, or a boolean. If `undefined` or `true`, it will forbid all unknown keys; if `false`, it will not. Known keys are those defined by [`keyflow.use()`](#keyflowusekeys) or all of those that appear in any schema fed to [`Keyflow()`](#keyflowvalidation-message) or [`keyflow.and()`](#keyflowandvalidation-message), including those within a `Joi.object()` or inside inner `keyflow`s.
 
 ```javascript
+// Key 'name' is forbidden
 const validation = Keyflow({
     username: Joi.string().min(5).max(10),
     password: Joi.string().min(10).max(30),
     email: Joi.string().email()
 }).forbid(['name']);
+// All unknown keys are now forbidden
+validation.forbid();
 ```
 
 #### `keyflow.convert()`
@@ -251,9 +271,9 @@ Same as [`flow.convert()`](#flowconvert). It has inner to outer precedence, mean
 
 - `toValidate`: Object to apply the validation to.
 - `options` (Optional): With keys:
-    - `unknown`: Determines what to do for unknown keys. Valid values are `'disallow'` and `'strip'`. By default, it ignores them. Known keys are all of those that appear in any schema fed to [`Keyflow()`](#keyflowvalidation-message) or [`keyflow.and()`](#keyflowandvalidation-message), including those within a `Joi.object()` or inside inner `keyflow`s.
+    - `strip`: Boolean. If `true`, all unknown keys will not be on the returned object (within the `value` key); `false` by default. If [`keyflow.use()`](#keyflowusekeys) was used, it will strip all other keys from the object regardless of whether the `strip` option here is `false`;
 
-Returns a an object with two keys, `value` and `error`, in the same fashion as [`flow.validate()`](flowvalidatetovalidate).
+Returns a an object with two keys, `value` and `error`, in the same fashion as [`flow.validate()`](#flowvalidatetovalidate).
 
 ```javascript
 const validation = KeyFlow({
@@ -268,12 +288,8 @@ validation.validate({ password: 'abc' });
 // as it's stripping the unknown value `password`
 validation.validate(
     { password: 'abc', username: 'cde' }, 
-    { unknown: 'strip' }
+    { strip: true }
 ); 
-
-// This would return an object with a ValidationError in its 
-//`error` key, as unknown values (`password`) are not allowed
-validation.validate({ password: 'abc' }, { unknown: 'disallow' }); 
 ```
 
 #### `keyflow.attempt(toValidate, options)`
@@ -326,12 +342,13 @@ const validation = Flow(x => {
 
 You can create your own validations for `flow` and `keyflow`.
 
-- If the validation didn't pass, you must return an object with a non empty `error` key. This can be a common `Error` (which will be converted to a [`ValidationError`](#validationerror) under the hood), or a `ValidationError` itself. These would be equivalent:
+- If the validation didn't pass, you must return an object with a non empty `error` key. This can be a common `Error` (which will be converted to a [`ValidationError`](#validationerror) under the hood), or a `ValidationError` itself. `aValidation` and `bValidation` below would be equivalent:
 
 ```javascript
 const aValidation = Flow(x => {
     return { error: new Error() };
 }, 'This is an error');
+
 const bValidation = Flow(x => {
     return {
         error: new ValidationError(
@@ -357,7 +374,7 @@ const bValidation = Flow(x => {
 });
 ```
 
-You can always also return the value and, if we chose to, mutate it. In such case, [`flow.convert()`](#flowconvert) or [`keyflow.convert()`](#keyflowconvert) must be active (otherwise the new value will be ignored).
+You can always also return the value and, if you choose to, mutate it. In such case, [`flow.convert()`](#flowconvert) or [`keyflow.convert()`](#keyflowconvert) must be active (otherwise the new value will be ignored).
 
 ```javascript
 // We only activate `convert` for this validation,
@@ -377,19 +394,19 @@ const validation = Flow()
 validation.validate(6); // In this case this validation would pass.
 ```
 
-Remember that, regardless of whether `convert()` is active, if you use a custom function on a `keyflow` validation, you could mutate the object by mistake, instead of correctly returning a new object via `value`.
+Remember that, regardless of whether `convert()` is active, if you use a custom function on a `keyflow` object, you could mutate the object to validate by mistake, instead of correctly returning a new object via `value`.
 
 ```javascript
 const validation = KeyFlow(obj => {
-    // Here we are mutating the object and it won't
-    // wether `convert()` is active. Subsequent validations
-    // will receive an object with an `username` key 
+    // Here we are mutating the object and it won't matter
+    // whether `convert()` is active. Subsequent validations
+    // will receive an object with an `username` key
     // with value `MyUsername`
     obj.username = 'MyUsername';
 });
 ```
 
-Async functions are also allowed (just remember to use `validateAsync()` or `attemptAsync()`).
+Async functions are also allowed, just remember to use `validateAsync()` or `attemptAsync()`.
 
 ```javascript
 const validation = KeyFlow(async obj => {

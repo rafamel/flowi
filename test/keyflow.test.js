@@ -171,8 +171,7 @@ test('6. keyflow.validate(), Concatenation', (t) => {
     t.end();
 });
 
-
-test('7. Private keyflow._knownKeys', (t) => {
+test('7. keyflow.keys and keyflow._knownKeys', (t) => {
     const val = KeyFlow({
         a: Joi.string(),
         b: Joi.number(),
@@ -205,11 +204,13 @@ test('7. Private keyflow._knownKeys', (t) => {
 
     const res = ['a', 'b', 'c', 'f', 'g', 'h', 'k', 'l', 'm', 'p', 'q', 'r'];
     t.deepEqual(val._knownKeys.sort(), res);
+    t.deepEqual(val.keys.sort(), res);
+    val.use(['a', 'b', 'c']);
+    t.deepEqual(val.keys.sort(), ['a', 'b', 'c']);
     t.end();
 });
 
-
-test('8. keyflow.validate() unknown', (t) => {
+test('8. keyflow.validate() strip', (t) => {
     const id = ij();
     const val = KeyFlow({ a: Joi.number() }).and({ b: Joi.number() });
 
@@ -219,14 +220,14 @@ test('8. keyflow.validate() unknown', (t) => {
         t.equal(res.error, null, id());
     }
     {   id(2);
-        const res = val.validate({ a: 1, b: 2, c: 3, d: 4 }, { unknown: 'strip' });
-        t.deepEqual(res.value, { a: 1, b: 2 }, id());
+        const res = val.validate({ a: 1, b: 2, c: 3, d: 4 }, { strip: false });
+        t.deepEqual(res.value, { a: 1, b: 2, c: 3, d: 4 }, id());
         t.equal(res.error, null, id());
     }
     {   id(3);
-        const res = val.validate({ a: 1, b: 2, c: 3, d: 4 }, { unknown: 'disallow' });
-        t.deepEqual(res.value, { a: 1, b: 2, c: 3, d: 4 }, id());
-        t.not(res.error, null, id());
+        const res = val.validate({ a: 1, b: 2, c: 3, d: 4 }, { strip: true });
+        t.deepEqual(res.value, { a: 1, b: 2 }, id());
+        t.equal(res.error, null, id());
     }
 
     t.end();
@@ -427,8 +428,11 @@ test('12. keyflow.require()', (t) => {
         t.equal(val.validate({}).error.message, 'labelA is required', id());
     }
     {   id(3);
-        const val = KeyFlow().require(['a'], 'Message');
-        t.equal(val.validate({}).error.message, 'Message', id());
+        let val = KeyFlow({ a: Joi.number(), b: Joi.number() }).require();
+
+        t.not(val.validate({ b: 1 }).error, null, id());
+        val.require(false);
+        t.equal(val.validate({}).error, null, id());
     }
 
     t.end();
@@ -436,6 +440,7 @@ test('12. keyflow.require()', (t) => {
 
 test('13. keyflow.forbid()', (t) => {
     const id = ij();
+
 
     {   id(1);
         const val = KeyFlow().forbid(['a', 'b', 'c']);
@@ -452,11 +457,45 @@ test('13. keyflow.forbid()', (t) => {
         t.equal(val.validate({ b: 2 }).error.message, 'labelB is forbidden', id());
     }
     {   id(3);
-        const val = KeyFlow({
-            a: Joi.number().min(10)
-        }).forbid(['a'], 'Message');
+        let val = KeyFlow({ a: Joi.number() }).forbid();
 
-        t.equal(val.validate({ a: 1 }).error.message, 'Message', id());
+        t.not(val.validate({ b: 1 }).error, null, id());
+        val.forbid(false);
+        t.equal(val.validate({ b: 1 }).error, null, id());
+    }
+
+    t.end();
+});
+
+test('14. keyflow.use()', (t) => {
+    const id = ij();
+
+    const val = KeyFlow(
+        KeyFlow({
+            a: Joi.number().max(5),
+            b: Joi.number().max(5),
+            c: Joi.number().max(5),
+            d: Joi.number().max(5),
+        }).labels({ c: 'labelC' }).use(['a', 'b'])
+    );
+
+    {   id(1);
+        t.equal(val.validate({ a: 1, b: 2, c: 6 }).error, null, id());
+    }
+    val.forbid();
+    {   id(2);
+        const err = val.validate({ c: 1 }).error
+        t.not(err, null, id());
+        t.equal(err.message, 'labelC is forbidden', id());
+        t.equal(err.label, 'labelC', id());
+        t.equal(err.isExplicit, false, id());
+    }
+    {   id(3);
+        const err = val.validate({ d: 1 }).error
+        t.not(err, null, id());
+        t.equal(err.message, 'd is forbidden', id());
+        t.equal(err.label, undefined, id());
+        t.equal(err.isExplicit, false, id());
     }
 
     t.end();
