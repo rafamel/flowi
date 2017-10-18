@@ -7,9 +7,9 @@
   "main": "./lib/index",
   "scripts": {
     "lint": "./node_modules/.bin/eslint lib/*.js",
-    "test": "./node_modules/.bin/tape ./test/index.js | tap-spec",
-    "cover": "./node_modules/.bin/istanbul cover tape ./test/index.js",
-    "prepublish": "npm run lint && npm run test"
+    "test-lint": "./node_modules/.bin/eslint test/*.js",
+    "test": "npm run test-lint && ./node_modules/.bin/jest ./test/*.js --coverage --runInBand --runTestsByPath --verbose",
+    "prepublish": "npm run lint && npm run test-lint && ./node_modules/.bin/jest ./test/*.test.js --runTestsByPath"
   },
   "contributors": [
     {
@@ -42,9 +42,7 @@
     "eslint-plugin-node": "^5.1.1",
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^3.0.1",
-    "istanbul": "^0.4.5",
-    "tap-spec": "^4.1.1",
-    "tape-async": "^2.3.0"
+    "jest-cli": "^21.2.1"
   },
   "dependencies": {
     "joi": "^11.1.1",
@@ -55,5 +53,8 @@
   },
   "engines": {
     "node": ">=8.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node"
   }
 }

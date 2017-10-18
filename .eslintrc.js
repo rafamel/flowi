@@ -4,6 +4,11 @@ module.exports = {
     env: {
       node: true
     },
+    globals: {
+        "describe": true,
+        "test": true,
+        "expect": true
+    },
     rules: {
         // Indentation
         "indent": [ 2, 4 ],

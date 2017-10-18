@@ -1,169 +1,119 @@
 'use strict';
-const test = require('tape-async');
 const Joi = require('joi');
 const { Flow, ValidationError } = require('../lib');
 
-const ij = () => {
-    let c = { i: 0, j: 0};
-    return (j, msg) => {
-        if (Number.isInteger(j)) c = { i: 0, j: j, msg: msg};
-        else {
-            c.i += 1;
-            const ans = ((c.j === 0)
-                ? [`[${c.i}]`, `Test ${c.i}`]
-                : [`[${c.j}, ${c.i}]`, `Block ${c.j}, Test ${c.i}`]);
-            return ((!c.msg)
-                ? `${ans[0]} ${ans[1]}`
-                : `${ans[0]} ${c.msg} (${ans[1]})`);
-        }
-    };
-};
+const id = (n) => `[${ String(n) }] `;
 
-test('1. Flow() and new Flow() should both work', (t) => {
-    const id = ij();
-
-    {   id(1, 'Flow() shouldn\'t error out');
-        let err;
-        try { Flow(); } catch (e) { err = e; }
-        t.equal(err, undefined, id());
-    }
-    {   id(2);
-        t.deepEqual(Flow(), new Flow(), id());
-    }
-
-    t.end();
+describe(`- Flow() and new Flow() should both work`, () => {
+    test(id(1) + `Flow() shouldn't error out`, () => {
+        expect(() => { Flow(); }).not.toThrowError();
+    });
+    test(id(2) + `Flow() and new Flow() should be deep equal`, () => {
+        expect(Flow()).toEqual(new Flow());
+    });
 });
 
-test('2. Flow() and flow.and() take (only) allowed types', (t) => {
-    const id = ij();
-
-    const shouldNotThrow = [
-        Joi.string(),
-        (x) => { return { error: null }; },
-        Flow()
-    ];
-    const shouldThrow = [
-        'String',
-        5,
-        [2, 3, 3],
-        { key: 4 }
-    ];
-
-    {   id(1, 'Flow()');
+describe(`- Flow() and flow.and() take (only) allowed types`, () => {
+    test(id(1) + `Should not throw`, () => {
+        const shouldNotThrow = [
+            Joi.string(),
+            (x) => { return { error: null }; },
+            Flow()
+        ];
         shouldNotThrow.forEach(validation => {
-            const res = Flow(validation);
-            t.equal(res.error, undefined, id());
+            expect(Flow(validation).error).toBe(undefined);
+            expect(Flow().and(validation).error).toBe(undefined);
         });
-    }
-    {   id(2, 'flow.and()');
-        shouldNotThrow.forEach(validation => {
-            const res = Flow().and(validation);
-            t.equal(res.error, undefined, id('Flow.and()'));
-        });
-    }
-    {   id(3, 'Flow()');
+    });
+    test(id(2) + `Should throw`, () => {
+        const shouldThrow = [
+            'String',
+            5,
+            [2, 3, 3],
+            { key: 4 }
+        ];
         shouldThrow.forEach(validation => {
-            let errOut
-            try { Flow(validation); } catch (err) { errOut = err };
-            t.equal(errOut instanceof ValidationError, false, id());
+            const vals = [
+                () => { Flow(validation); },
+                () => { Flow().and(validation); }
+            ];
+            vals.forEach(val => {
+                expect(val).toThrowError('No valid Joi, Flowi validation, or function was provided.');
+                expect(val).not.toThrowError(ValidationError);
+            });
         });
-    }
-    {   id(4, 'flow.and()');
-        shouldThrow.forEach(validation => {
-            let errOut
-            try { Flow.and(validation); } catch (err) { errOut = err };
-            t.equal(errOut instanceof ValidationError, false, id());
+    });
+});
+
+describe(`- flow.and()`, () => {
+    test(id(1) + `adds validations`, () => {
+        const arr = [
+            Joi.string(),
+            (x) => { return { error: null }; },
+            Flow()
+        ];
+        const flowEl = Flow(arr[0]).and(arr[1]).and(arr[2]);
+
+        expect(flowEl.stack[0].validation).toEqual(arr[0]);
+        expect(flowEl.stack[1].validation).toEqual(arr[1]);
+        expect(flowEl.stack[2].validation).toEqual(arr[2]);
+    });
+});
+
+describe(`- flow.validate()`, () => {
+    describe(`- Empty stack`, () => {
+        test(id(1) + `doesn't error out`, () => {
+            expect(() => { Flow().validate('string'); })
+                .not.toThrowError();
         });
-    }
+    });
 
-    t.end();
-});
-
-test('3. flow.and() adds validations', (t) => {
-    const id = ij();
-
-    const arr = [
-        Joi.string(),
-        (x) => { return { error: null }; },
-        Flow()
-    ];
-    const flowEl = Flow(arr[0]).and(arr[1]).and(arr[2]);
-
-    t.deepEqual(flowEl.stack[0].validation, arr[0], id());
-    t.deepEqual(flowEl.stack[1].validation, arr[1], id());
-    t.deepEqual(flowEl.stack[2].validation, arr[2], id());
-    t.end();
-});
-
-
-test('4. flow.validate() doesn\'t error out with an empty stack', (t) => {
-    const id = ij();
-
-    let err;
-    try { Flow().validate('string') } catch (e) { err = e };
-
-    t.equal(err, undefined, id());
-    t.end();
-});
-
-test('5. Flow, Validate & Attempt, Basic Pass/Not pass', (t) => {
-    const vals = [
-        { validation: Flow(Joi.string()),
-            name: 'Joi' },
-        { validation: Flow(Flow(Flow(Joi.string()))),
-            name: 'Joi on Flow' },
-        { validation: Flow(x => {
-                if (typeof x === 'string') return { error: null, value: x};
+    describe(`- Basic pass`, () => {
+        const vals = [
+            Flow(Joi.string()),
+            Flow(Flow(Flow(Joi.string()))),
+            Flow(x => {
+                if (typeof x === 'string') return { error: null, value: x };
                 return { error: new ValidationError(), value: x };
-            }),
-            name: 'Function' },
-    ];
-
-    let now = 'flow.validate()';
-    vals.forEach(({ validation: val, name }) => {
-        const noErrors = val.validate('some');
-        const itErrors = val.validate(5);
-        t.equal(noErrors.value, 'some', `${now}, ${name}, Pass, Should have value`);
-        t.equal(noErrors.error, null, `${now}, ${name}, Pass, Should have null error`);
-        t.equal(itErrors.value, 5, `${now}, ${name}, Not Pass, Should have value`);
-        t.not(itErrors.error, null, `${now}, ${name}, Not pass, error should not be null`);
-        t.equal(itErrors.error instanceof ValidationError, true, `${now}, ${name}, Not pass, error should be ValidationError`);
+            })
+        ];
+        test(id(1) + `flow.validate()`, () => {
+            vals.forEach((validation) => {
+                const noErrors = validation.validate('some');
+                const itErrors = validation.validate(5);
+                expect(noErrors.value).toBe('some');
+                expect(noErrors.error).toBe(null);
+                expect(itErrors.value).toBe(5);
+                expect(itErrors.error).toBeInstanceOf(ValidationError);
+            });
+        });
+        test(id(2) + `flow.attempt()`, () => {
+            vals.forEach((validation) => {
+                const noErrors = () => { validation.attempt('some'); };
+                const itErrors = () => { validation.attempt(5); };
+                expect(noErrors).not.toThrowError();
+                expect(itErrors).toThrowError(ValidationError);
+            });
+        });
     });
 
-    now = 'flow.attempt()';
-    vals.forEach(({ validation: val, name }) => {
-        let noErrors, itErrors;
-        try { noErrors = val.attempt('some'); }
-        catch (err) { noErrors = err }
-        try { itErrors = val.attempt(5); }
-        catch (err) { itErrors = err }
+    describe(`- Functions`, () => {
+        test(id(1) + `Empty return function`, () => {
+            const val = Flow(x => { }).validate(0);
 
-        t.equal(noErrors, 'some', name + ', Pass');
-        t.equal(itErrors instanceof ValidationError, true, name + ', Not pass, error should be ValidationError');
+            expect(val.error).toBe(null);
+            expect(val.value).toBe(0);
+        });
+        test(id(2) + `Error to Validation error`, () => {
+            const val = Flow(x => { return { error: new Error() }; })
+                .validate(0);
+
+            expect(val.error).toBeInstanceOf(ValidationError);
+        });
     });
-
-    t.end();
 });
 
-test('6. flow.validate(), Function', (t) => {
-    const id = ij();
-
-    {   id(1, 'Empty return function');
-        const val = Flow(x => { return; } );
-        t.equal(val.validate(0).error, null, id());
-        t.equal(val.validate(0).value, 0, id());
-    }
-    {   id(2, 'Error to Validation error');
-        const val = Flow(x => { return { error: new Error()}; } );
-        t.equal(val.validate(0).error instanceof ValidationError, true, id());
-    }
-
-    t.end();
-});
-
-test('7. flow.validate(), Concatenation', (t) => {
-    const id = ij();
-
+describe(`- Concatenation`, () => {
     const val = Flow()
         .and(Joi.string().min(4))
         .and(x => {
@@ -173,179 +123,166 @@ test('7. flow.validate(), Concatenation', (t) => {
             Joi.string().lowercase()
         );
 
-    t.equal(val.validate(5).error instanceof ValidationError, true, id());
-    t.equal(val.validate('123').error instanceof ValidationError, true, id());
-    t.equal(val.validate('1234567').error instanceof ValidationError, true, id());
-    t.equal(val.validate('ASDFG').error instanceof ValidationError, true, id());
-    t.equal(!val.validate('asdfg').error, true, id());
+    test(id(1) + `Returns error for invalid values`, () => {
+        const values = [5, '123', '1234567', 'ASDFG'];
+        values.forEach(value => {
+            expect(val.validate(value).error).toBeInstanceOf(ValidationError);
+        });
+    });
 
-    t.end();
+    test(id(2) + `Returns error for valid value`, () => {
+        expect(val.validate('asdfg').error).toBe(null);
+    });
 });
 
-test('8. flow.validate(), Label & Error', (t) => {
-    const id = ij();
+describe(`- Label & Error Message`, () => {
+    describe(`- Label`, () => {
+        const msgLabel = (err) => err.message.split(' ')[0];
+        let val = Flow(Joi.string().label('User')).and(Joi.string().max(5));
 
-    const getErr = (err) => {
-        if (!err) return;
-        else return err.message.split(' ')[0];
-    };
+        test(id(1) + `Inherit labels from Joi object`, () => {
+            const error = val.validate(5).error;
 
-    let val = Flow(Joi.string().label('User')).and(Joi.string().max(5));
+            expect(msgLabel(error)).toBe('User');
+            expect(error.label).toBe('User');
+            expect(error.isExplicit).toBe(false);
+        });
+        test(id(2), () => {
+            const error = val.validate('123456').error;
 
-    {   id(1) // Block #
-        // Inherit labels from Joi object
-        const res = val.validate(5);
+            expect(msgLabel(error)).not.toBe('User');
+            expect(error.label).toBe(undefined);
+            expect(error.isExplicit).toBe(false);
+        });
+        test(id(3), () => {
+            const error = Flow(val)
+                .and(Joi.string().max(6))
+                .validate('12345678')
+                .error;
+            expect(msgLabel(error)).not.toBe('User');
+            expect(msgLabel(error)).toBe('Value');
+            expect(error.label).toBe(undefined);
+            expect(error.isExplicit).toBe(false);
+        });
+        test(id(4) + `Inner Joi object label has precedence over outer Flow label`, () => {
+            const error = val.validate(5).error;
 
-        t.equal(getErr(res.error), 'User', id());
-        t.equal(res.error.label, 'User', id());
-        t.equal(res.error.isExplicit, false, id());
-    }
-    {   id(2) // Block #
-        const res = val.validate('123456')
+            expect(msgLabel(error)).toBe('User');
+            expect(error.label).toBe('User');
+            expect(error.isExplicit).toBe(false);
+        });
+        test(id(5) + `Inherit flow label on new Flow validation from Flow object`, () => {
+            const error = Flow()
+                .and(Flow(Joi.string().label('User')).label('Pass'))
+                .and(Joi.string().max(6))
+                .validate('12345678')
+                .error;
 
-        t.not(getErr(res.error), 'User', id());
-        t.equal(res.error.label, undefined, id());
-        t.equal(res.error.isExplicit, false, id());
-    }
-    {   id(3) // Block #
-        // Not inherit label from inner Joi object to new Flow validation from Flow object
-        const val2 = Flow(val).and(Joi.string().max(6));
-        const res = val2.validate('12345678');
+            expect(msgLabel(error)).toBe('Pass');
+            expect(error.label).toBe('Pass');
+            expect(error.isExplicit).toBe(false);
+        });
+        test(id(6) + `Outer label to inner error`, () => {
+            const error = Flow()
+                .and(Flow(Flow(Joi.number().min(5))))
+                .label('Outer')
+                .validate(4)
+                .error;
 
-        t.not(getErr(res.error), 'User', id());
-        t.equal(res.error.label, undefined, id());
-        t.equal(res.error.isExplicit, false, id());
-    }
+            expect(msgLabel(error)).toBe('Outer');
+            expect(error.label).toBe('Outer');
+            expect(error.isExplicit).toBe(false);
+        });
+    });
 
-    val = Flow(Joi.string().label('User')).label('Pass');
-    {   id(4) // Block #
-        // Inner Joi object label has precedence over outer Flow label
-        const res = val.validate(5);
+    describe(`- Error Message precedence`, () => {
+        const val = Flow(Joi.string().label('User'), 'Some error');
+        const val2 = Flow(val).and(Joi.string().max(2));
+        const val3 = Flow()
+            .and(Flow()
+                .and(Flow(Joi.string(), 'Some error').label('User'))
+                .and(Joi.string().max(2)),
+            'Other error');
 
-        t.equal(getErr(res.error), 'User', id());
-        t.equal(res.error.label, 'User', id());
-        t.equal(res.error.isExplicit, false, id());
-    }
-    {   id(5) // Block #
-        // Inherit flow label on new Flow validation from Flow object
-        const val2 = Flow(val).and(Joi.string().max(6));
-        const res = val2.validate('12345678');
+        test(id(1) + `Base error message`, () => {
+            const error = val.validate(5).error;
 
-        t.equal(getErr(res.error), 'Pass', id());
-        t.equal(res.error.label, 'Pass', id());
-        t.equal(res.error.isExplicit, false, id());
-    }
+            expect(error.message).toBe('Some error');
+            expect(error.label).toBe('User');
+            expect(error.isExplicit).toBe(true);
+        });
+        test(id(2) + `Inherits error message`, () => {
+            const error = val2.validate(5).error;
 
-    val = Flow(Flow(Flow(Joi.number().min(5)))).label('Outer');
-    {   id(6) // Block #
-        // Outer label to inner error
-        const res = val.validate(4);
+            expect(error.message).toBe('Some error');
+            expect(error.label).toBe('User');
+            expect(error.isExplicit).toBe(true);
+        });
+        test(id(3) + `Msg not inherited for separate validation, not inherited label from joi`, () => {
+            const error = val2.validate('1234').error;
 
-        t.equal(getErr(res.error), 'Outer', id());
-        t.equal(res.error.label, 'Outer', id());
-        t.equal(res.error.isExplicit, false, id());
-    }
+            expect(error.message).not.toBe('Some error');
+            expect(error.label).not.toBe('User');
+            expect(error.isExplicit).toBe(false);
+        });
+        test(id(4) + `Msg not inherited for separate validation, inherited label from flow`, () => {
+            const error = Flow()
+                .and(Flow(Joi.string(), 'Some error').label('User'))
+                .and(Joi.string().max(2))
+                .validate('1234')
+                .error;
 
-    t.end();
+            expect(error.message).not.toBe('Some error');
+            expect(error.label).toBe('User');
+            expect(error.isExplicit).toBe(false);
+        });
+        test(id(5), () => {
+            const error = val3.validate(5).error;
+
+            expect(error.message).toBe('Some error');
+            expect(error.label).toBe('User');
+            expect(error.isExplicit).toBe(true);
+        });
+        test(id(6), () => {
+            const error = val3.validate('1234').error;
+
+            expect(error.message).toBe('Other error');
+            expect(error.label).toBe('User');
+            expect(error.isExplicit).toBe(true);
+        });
+    });
 });
 
-test('9. flow.validate(), Label, Error, Error message', (t) => {
-    const id = ij();
-
-    let val = Flow(Joi.string().label('User'), 'Some error');
-
-    {   id(1);
-        const msg = 'Base error message';
-        const res = val.validate(5).error;
-
-        t.equal(res.message, 'Some error', id(msg));
-        t.equal(res.label, 'User', id(msg));
-        t.equal(res.isExplicit, true, id(msg));
-    }
-
-    val = Flow(val).and(Joi.string().max(2));
-
-    {   id(2);
-        const msg = 'Inherits error message';
-        const res = val.validate(5).error;
-
-        t.equal(res.message, 'Some error', id(msg));
-        t.equal(res.label, 'User', id(msg));
-        t.equal(res.isExplicit, true, id(msg));
-    }
-    {   id(3);
-        const msg = 'Msg not inherited for separate validation, not inherited label from joi';
-        const res = val.validate('1234').error;
-
-        t.not(res.message, 'Some error', id(msg));
-        t.not(res.label, 'User', id(msg));
-        t.equal(res.isExplicit, false, id(msg));
-    }
-
-    val = Flow(Flow(Joi.string(), 'Some error').label('User'))
-    .and(Joi.string().max(2));
-
-    {   id(4);
-        const msg = 'Msg not inherited for separate validation, inherited label from flow';
-        const res = val.validate('1234').error;
-        t.not(res.message, 'Some error', id(msg));
-        t.equal(res.label, 'User', id(msg));
-        t.equal(res.isExplicit, false, id(msg));
-
-    }
-
-    val = Flow(Flow(Flow(Joi.string(), 'Some error').label('User'))
-    .and(Joi.string().max(2)), 'Other error');
-
-    {   id(5);
-        const res = val.validate(5).error;
-        t.equal(res.message, 'Some error', id());
-        t.equal(res.label, 'User', id());
-        t.equal(res.isExplicit, true, id());
-    }
-    {   id(6);
-        const res = val.validate('1234').error;
-        t.equal(res.message, 'Other error', id());
-        t.equal(res.label, 'User', id());
-        t.equal(res.isExplicit, true, id());
-    }
-
-    t.end();
-});
-
-test('10. flow.validate(), flow.convert()', (t) => {
-    const id = ij();
-
-    {   id(1, 'Joi convert, pass');
+describe(`- flow.convert()`, () => {
+    test(id(1) + `Joi convert, pass`, () => {
         const test = Flow(Joi.string().lowercase()).convert().validate('AAA');
 
-        t.equal(test.value, 'aaa', id());
-        t.equal(test.error, null, id());
-    }
-    {   id(2, 'Joi convert, not pass');
+        expect(test.value).toBe('aaa');
+        expect(test.error).toBe(null);
+    });
+    test(id(2) + `Joi convert, not pass`, () => {
         const test = Flow(Joi.string().lowercase().min(6)).convert().validate('AAA');
 
-        t.equal(test.value, 'aaa', id());
-        t.not(test.error, null, id());
-    }
-    {
-        id(3, 'Joi not convert, not pass');
+        expect(test.value).toBe('aaa');
+        expect(test.error).toBeInstanceOf(ValidationError);
+    });
+    test(id(3) + `Joi not convert, not pass`, () => {
         const test = Flow(Joi.string().lowercase()).validate('AAA');
 
-        t.equal(test.value, 'AAA', id());
-        t.not(test.error, null, id());
-    }
-    {   id(4, 'Function convert, not pass');
-        const test = Flow((x) => { return { error: Error(), value: 25}; }).convert().validate('AAA');
+        expect(test.value).toBe('AAA');
+        expect(test.error).toBeInstanceOf(ValidationError);
+    });
+    test(id(4) + `Function convert, not pass`, () => {
+        const test = Flow((x) => { return { error: Error(), value: 25 }; }).convert().validate('AAA');
 
-        t.equal(test.value, 25, id());
-    }
-    {   id(5, 'Function not convert, not pass');
-        const test = Flow((x) => { return { error: Error(), value: 25}; }).validate('AAA');
+        expect(test.value).toBe(25);
+    });
+    test(id(5) + `Function not convert, not pass`, () => {
+        const test = Flow((x) => { return { error: Error(), value: 25 }; }).validate('AAA');
 
-        t.equal(test.value, 'AAA', id());
-    }
-    {   id(6, 'Concatenation convert');
+        expect(test.value).toBe('AAA');
+    });
+    test(id(6) + `Concatenation convert`, () => {
         const test = Flow()
             .and(Joi.string().lowercase())
             .and(x => { return { error: null, value: x.toUpperCase().slice(3) }; })
@@ -353,84 +290,95 @@ test('10. flow.validate(), flow.convert()', (t) => {
             .convert()
             .validate(' AAAA ');
 
-        t.equal(test.value, 'AA', id());
-        t.equal(test.error, null, id());
-    }
-    {   id(7, 'Concatenation, Failed structure');
+        expect(test.value).toBe('AA');
+        expect(test.error).toBe(null);
+    });
+    test(id(7) + `Concatenation, Failed structure`, () => {
         const test = Flow(Flow(Joi.string().lowercase()))
             .convert()
             .validate('AA');
 
-        t.not(test.error, null, id());
-    }
-    {   id(8, 'Concatenation, Mixed convert (1)')
+        expect(test.error).toBeInstanceOf(ValidationError);
+    });
+    test(id(8) + `Concatenation, Mixed convert (1)`, () => {
         const test = Flow()
             .and(Flow(Joi.string().lowercase()))
             .convert()
             .validate(' AAAA ');
 
-        t.not(test.error, null, id());
-    }
-    {   id(9, 'Concatenation, Mixed convert (2)');
+        expect(test.error).toBeInstanceOf(ValidationError);
+    });
+    test(id(9) + `Concatenation, Mixed convert (2)`, () => {
         const test = Flow()
             .and(Flow(Joi.string().lowercase()).convert())
             .and(Joi.string().regex(/^ aaaa $/))
             .validate(' AAAA ');
 
-        t.equal(test.error, null, id());
-    }
-    {   id(10, 'Concatenation, Mixed convert (3)');
+        expect(test.error).toBe(null);
+    });
+    test(id(10) + `Concatenation, Mixed convert (3)`, () => {
         const test = Flow()
             .and(Flow(Joi.string().lowercase()).convert())
             .and(Joi.string().trim())
             .validate(' AAAA ');
 
-        t.not(test.error, null, id());
-    }
-
-    t.end();
+        expect(test.error).toBeInstanceOf(ValidationError);
+    });
 });
 
-test('11. Async Flow', async (t) => {
-    const id = ij();
+describe(`- Async Flow`, () => {
+    test(id(1) + `Sync doesn't take async functions`, () => {
+        const error = () => {
+            return Flow()
+                .and(async (x) => { })
+                .validate(12);
+        };
 
-    {   id(1, 'Sync doesn\'t take async functions');
-        let err;
-        try { Flow().and(async (x) => { return; }).validate(12) }
-        catch (e) { err = e; }
+        expect(error).toThrowError();
+        expect(error).not.toThrowError(ValidationError);
+        expect(error).toThrowError('Use the Async validation functions when using any async function');
+    });
 
-        t.equal(err.message, 'Use the Async validation functions when using any async function', id());
-    }
-    {   id(2, 'flow.validateAsync(), empty return');
-        const val = Flow()
-            .and(async (x) => { return; })
-            .and(Joi.string().max(2))
-        const ans1 = await val.validateAsync('12');
-        const ans2 = await val.validateAsync('1234');
+    describe(`- flow.validateAsync()`, () => {
+        describe(`- Empty return`, () => {
+            const val = Flow()
+                .and(async (x) => { })
+                .and(Joi.string().max(2));
 
-        t.equal(ans1.error, null, id());
-        t.equal(ans1.value, '12', id());
-        t.not(ans2.error, null, id());
-        t.equal(ans2.value, '1234', id());
-    }
-    {   id(3, 'flow.validateAsync(), value change, no convert');
-        const val = Flow()
-            .and(async (x) => { return { value: '555' }; })
-            .and(Joi.string().max(2))
-        const ans = await val.validateAsync('12');
+            test(id(1) + `Should error`, async () => {
+                const res = await val.validateAsync('1234');
 
-        t.equal(ans.error, null, id());
-        t.equal(ans.value, '12', id());
-    }
-    {   id(4, 'flow.validateAsync(), value change, convert');
-        const val = Flow()
-            .and(async (x) => { return { value: '555' }; })
-            .and(Joi.string().max(2))
-            .convert()
-        const ans = await val.validateAsync('12');
-        t.not(ans.error, null, id());
-        t.equal(ans.value, '555', id());
-    }
+                expect(await res.error).toBeInstanceOf(ValidationError);
+                expect(await res.value).toBe('1234');
+            });
+            test(id(2) + `Should not error`, async () => {
+                const res = await val.validateAsync('12');
 
-    t.end();
+                expect(await res.error).toBe(null);
+                expect(await res.value).toBe('12');
+            });
+        });
+
+        describe(`- Value change`, () => {
+            test(id(1) + `No convert`, async () => {
+                const res = await Flow()
+                    .and(async (x) => { return { value: '555' }; })
+                    .and(Joi.string().max(2))
+                    .validateAsync('12');
+
+                expect(await res.error).toBe(null);
+                expect(await res.value).toBe('12');
+            });
+            test(id(2) + `Convert`, async () => {
+                const res = await Flow()
+                    .and(async (x) => { return { value: '555' }; })
+                    .and(Joi.string().max(2))
+                    .convert()
+                    .validateAsync('12');
+
+                expect(await res.error).toBeInstanceOf(ValidationError);
+                expect(await res.value).toBe('555');
+            });
+        });
+    });
 });
