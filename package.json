@@ -7,9 +7,10 @@
   "main": "./lib/index",
   "scripts": {
     "lint": "./node_modules/.bin/eslint lib/*.js",
-    "test-lint": "./node_modules/.bin/eslint test/*.js",
-    "test": "npm run test-lint && ./node_modules/.bin/jest ./test/*.js --coverage --runInBand --runTestsByPath --verbose",
-    "prepublish": "npm run lint && npm run test-lint && ./node_modules/.bin/jest ./test/*.test.js --runTestsByPath"
+    "test": "npm run test:lint && ./node_modules/.bin/jest ./test/*.js --runInBand --runTestsByPath --verbose",
+    "test:lint": "./node_modules/.bin/eslint test/*.js",
+    "prepublish": "npm run lint && npm run test:lint && ./node_modules/.bin/jest ./test/*.test.js --runTestsByPath",
+    "update:packages": "rm -rf node_modules && rm package-lock.json && npm update --save/save-dev && npm install && npm outdated"
   },
   "contributors": [
     {
@@ -36,25 +37,27 @@
     }
   ],
   "devDependencies": {
-    "eslint": "^4.7.2",
+    "coveralls": "^3.0.0",
+    "eslint": "^4.9.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.7.0",
-    "eslint-plugin-node": "^5.1.1",
-    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-node": "^5.2.0",
+    "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-standard": "^3.0.1",
     "jest-cli": "^21.2.1"
   },
   "dependencies": {
-    "joi": "^11.1.1",
-    "is-promise": "^2.1.0"
+    "is-promise": "^2.1.0",
+    "joi": "^13.0.0"
   },
   "peerDependencies": {
-    "joi": "^11.1.1"
+    "joi": "^13.0.0"
   },
   "engines": {
     "node": ">=8.0.0"
   },
   "jest": {
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "collectCoverage": true
   }
 }

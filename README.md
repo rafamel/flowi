@@ -1,9 +1,11 @@
 # Flowi
 
-[![Version](https://img.shields.io/github/package-json/v/rafamel/flowi.svg)]()
-[![Build Status](https://img.shields.io/travis/rafamel/flowi.svg)](https://travis-ci.org/rafamel/flowi)
+[![Version](https://img.shields.io/github/package-json/v/rafamel/flowi.svg)](https://github.com/rafamel/flowi)
+[![Build Status](https://travis-ci.org/rafamel/flowi.svg)](https://travis-ci.org/rafamel/flowi)
+[![Coverage](https://img.shields.io/coveralls/rafamel/flowi.svg)](https://coveralls.io/github/rafamel/flowi?branch=master)
+[![Dependencies](https://david-dm.org/rafamel/flowi/status.svg)](https://david-dm.org/rafamel/flowi)
 [![Vulnerabilities](https://snyk.io/test/npm/flowi/badge.svg)](https://snyk.io/test/npm/flowi)
-[![Issues](https://img.shields.io/github/issues/rafamel/flowi.svg)]()
+[![Issues](https://img.shields.io/github/issues/rafamel/flowi.svg)](https://github.com/rafamel/flowi/issues)
 [![License](https://img.shields.io/github/license/rafamel/flowi.svg)](https://github.com/rafamel/flowi/blob/master/LICENSE)
 
 **Concatenate `Joi` validations, or custom function validations, for the same object or object key. Personalize the output error message for each of those validations.**
