@@ -7,8 +7,8 @@
   "main": "./lib/index",
   "scripts": {
     "lint": "./node_modules/.bin/eslint lib/*.js",
-    "test": "tape ./test/index.js | tap-spec",
-    "cover": "istanbul cover tape ./test/index.js",
+    "test": "./node_modules/.bin/tape ./test/index.js | tap-spec",
+    "cover": "./node_modules/.bin/istanbul cover tape ./test/index.js",
     "prepublish": "npm run lint && npm run test"
   },
   "contributors": [
@@ -36,7 +36,6 @@
     }
   ],
   "devDependencies": {
-    "coveralls": "^3.0.0",
     "eslint": "^4.7.2",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.7.0",
@@ -44,7 +43,6 @@
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^3.0.1",
     "istanbul": "^0.4.5",
-    "mocha": "^3.5.3",
     "tap-spec": "^4.1.1",
     "tape-async": "^2.3.0"
   },

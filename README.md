@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/github/package-json/v/rafamel/flowi.svg)]()
 [![Build Status](https://img.shields.io/travis/rafamel/flowi.svg)](https://travis-ci.org/rafamel/flowi)
-[![Dependencies](https://img.shields.io/david/rafamel/flowi.svg)]()
+[![Vulnerabilities](https://snyk.io/test/npm/flowi/badge.svg)](https://snyk.io/test/npm/flowi)
 [![Issues](https://img.shields.io/github/issues/rafamel/flowi.svg)]()
 [![License](https://img.shields.io/github/license/rafamel/flowi.svg)](https://github.com/rafamel/flowi/blob/master/LICENSE)
 
@@ -152,7 +152,7 @@ const { value, error } = validation.validate(toValidate);
 
 Create a new `flow` object by `KeyFlow(validation, message)` or `new KeyFlow(validation, message)`.
 
-- `validation`: Another `keyflow` or `flow` validation, `joi` validation object, [custom function](#custom-function), or schema validations. If it is a `keyflow` object and it has labels, the new object will inherit the labels.
+- `validation`: Another `keyflow` or `flow` validation, `joi` validation object, [custom function](#custom-function), or schema validations. If it is a `keyflow` object and it has labels, the new object will inherit the labels - it will, however, not inherit labels pertaining to `flow` objects within a schema of the `keyflow` object.
 - `message` (Optional): Message to display if validation fails. Will display `Joi` default otherwise. If there's an inner `flow` or `keyflow` validation with a message inside, the inner one will have priority.
 
 #### `keyflow.and(validation, message)`
