@@ -6,10 +6,13 @@
   "homepage": "https://github.com/rafamel/flowi",
   "main": "./lib/index",
   "scripts": {
-    "lint": "./node_modules/.bin/eslint lib/*.js",
-    "test": "npm run test:lint && ./node_modules/.bin/jest ./test/*.js --runInBand --runTestsByPath --verbose",
-    "test:lint": "./node_modules/.bin/eslint test/*.js",
-    "prepublish": "npm run lint && npm run test:lint && ./node_modules/.bin/jest ./test/*.test.js --runTestsByPath",
+    "lint": "eslint lib/*.js",
+    "lint:test": "eslint test/*.js",
+    "lint:md": "markdownlint *.md --config markdown.json",
+    "test": "npm run lint:test && jest ./test/*.js --runInBand --runTestsByPath --verbose",
+    "watch": "nodemon ./node_modules/.bin/run-s lint test",
+    "pre": "npm run prepublishOnly",
+    "prepublishOnly": "run-s lint lint:* && jest ./test/*.test.js --runTestsByPath",
     "update:packages": "rm -rf node_modules && rm package-lock.json && npm update --save/save-dev && npm install && npm outdated"
   },
   "contributors": [
@@ -44,11 +47,14 @@
     "eslint-plugin-node": "^5.2.0",
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-standard": "^3.0.1",
-    "jest-cli": "^21.2.1"
+    "jest-cli": "^21.2.1",
+    "markdownlint-cli": "^0.3.1",
+    "nodemon": "^1.12.1",
+    "npm-run-all": "^4.1.1"
   },
   "dependencies": {
     "is-promise": "^2.1.0",
-    "joi": "^13.0.0"
+    "joi": "^13.0.1"
   },
   "peerDependencies": {
     "joi": "^13.0.0"

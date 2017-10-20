@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/github/package-json/v/rafamel/flowi.svg)](https://github.com/rafamel/flowi)
 [![Build Status](https://travis-ci.org/rafamel/flowi.svg)](https://travis-ci.org/rafamel/flowi)
-[![Coverage](https://img.shields.io/coveralls/rafamel/flowi.svg)](https://coveralls.io/github/rafamel/flowi?branch=master)
+[![Coverage](https://img.shields.io/coveralls/rafamel/flowi.svg)](https://coveralls.io/github/rafamel/flowi)
 [![Dependencies](https://david-dm.org/rafamel/flowi/status.svg)](https://david-dm.org/rafamel/flowi)
 [![Vulnerabilities](https://snyk.io/test/npm/flowi/badge.svg)](https://snyk.io/test/npm/flowi)
 [![Issues](https://img.shields.io/github/issues/rafamel/flowi.svg)](https://github.com/rafamel/flowi/issues)
@@ -23,9 +23,7 @@
 
 [*Check `Joi` documentation first*](https://github.com/hapijs/joi/blob/v11.1.1/API.md)
 
-## Flow
-
-### Usage
+### Flow
 
 ```javascript
 const Joi = require('joi');
@@ -64,7 +62,7 @@ const dValidation = Flow(aValidation);
 // Message precedence: This below would show `Message 1`
 // if the validation fails
 const eValidation = Flow(
-    Flow(Joi.string().max(5), 'Message 1'), 
+    Flow(Joi.string().max(5), 'Message 1'),
     'Message 2'
 );
 ```
@@ -82,7 +80,7 @@ const validation = Flow(
     // The one below, when failing, will show the default Joi error
     .and(Joi.string().min(2))
     .and(
-        Joi.string().uppercase(), 
+        Joi.string().uppercase(),
         'All letters must be uppercase.'
     );
 ```
@@ -104,7 +102,7 @@ When `.convert()` is applied to a `flow` object, it will cast types and convert,
 ```javascript
 // This will effectively trim the string if it isn't
 const aValidation = Flow(Joi.string().trim()).convert();
-// This will trim the string but won't convert 
+// This will trim the string but won't convert
 // to uppercase (as it only applies to `aValidation`),
 // so it will fail if the string is not all in uppercase
 const bValidation = Flow(aValidation).and(Joi.string().uppercase());
@@ -119,6 +117,7 @@ const cValidation = Flow(Flow(Joi.string().uppercase())).convert()
 - `toValidate`: Object to apply the validation to.
 
 Returns a an object with two keys:
+
 - `value`: The original `toValidate` object, or casted/converted when `flow.convert()` is active.
 - `error`: A [`ValidationError`](#validationerror), if any ocurred, otherwise `null`.
 
@@ -130,9 +129,7 @@ Same as [`flow.validate()`](#flowvalidatetovalidate), but it will return the `va
 
 Same as [`flow.validate()`](#flowvalidatetovalidate) and [`flow.attempt()`](#flowattempttovalidate), but will return a promise. Their usage is a must if any async/promise-returning function was fed into a `flow` object as a [custom function](#custom-function);
 
-## KeyFlow
-
-### Usage
+### KeyFlow
 
 ```javascript
 const Joi = require('joi');
@@ -162,20 +159,20 @@ Create a new `flow` object by `KeyFlow(validation, message)` or `new KeyFlow(val
 Append a new validation to a `keyflow` oject. Takes the same arguments as [`Keyflow()`](#keyflowvalidation-message).
 
 ```javascript
-const aValidation = 
+const aValidation =
     // Adding a schema
     KeyFlow(
         {
             username: Joi.string().min(5).max(10),
             password: Flow(
-                Joi.string().min(10).max(30), 
+                Joi.string().min(10).max(30),
                 'Password should be 10 to 30 characters long'
             ),
             email: Flow(
-                Joi.string().email(), 
+                Joi.string().email(),
                 'Email should be valid'
             )
-        }, 
+        },
         'This will only show if a key has no message, as it\'s the case for "username"'
     )
     // Adding a Joi validation
@@ -190,7 +187,7 @@ const aValidation =
 // Adding a `keyflow` validation.
 // In doing so, we preserve the previous one (`aValidation`)
 // which can be useful to create a general validation that we
-// want to use as base for different cases without mutating the 
+// want to use as base for different cases without mutating the
 // original one (as we would if we did `aValidation.and()`).
 const bValidation = Flow(aValidation)
     // This new `keyflow.and()` will only apply for `bValidation`,
@@ -211,7 +208,7 @@ const aValidation = KeyFlow({
     email: Joi.string().email()
 }).labels({ username: 'User', password: 'Password', email: 'email' });
 
-// `bValidation` will inherit the labels of `aValidation`, 
+// `bValidation` will inherit the labels of `aValidation`,
 // even for new validations on the same keys
 const bValidation = KeyFlow(aValidation).and({
     // Will also inherit the label `Username` for the error message
@@ -284,14 +281,14 @@ const validation = KeyFlow({
 
 // This would return `{ value: { password: 'abc' }, error: null }`
 // as it's ignoring the unknown value `password`
-validation.validate({ password: 'abc' }); 
+validation.validate({ password: 'abc' });
 
 // This would return `{ value: { username: 'cde' }, error: null }`
 // as it's stripping the unknown value `password`
 validation.validate(
-    { password: 'abc', username: 'cde' }, 
+    { password: 'abc', username: 'cde' },
     { strip: true }
-); 
+);
 ```
 
 #### `keyflow.attempt(toValidate, options)`
@@ -302,9 +299,9 @@ Same as [`keyflow.validate()`](#keyflowvalidatetovalidate-options), but it will 
 
 Same as [`keyflow.validate()`](#keyflowvalidatetovalidate-options) and [`keyflow.attempt()`](#keyflowattempttovalidate-options), but will return a promise. Their usage is a must if any async/promise-returning function was fed into any of the inner validations as a [custom function](#custom-function);
 
-## ValidationError
+### ValidationError
 
-### Properties
+#### Properties
 
 A `ValidationError` will have properties:
 
@@ -314,7 +311,7 @@ A `ValidationError` will have properties:
 - `key`: The key the error comes from if it was part of a `keyflow` schema.
 - `note`: Original `Joi` message or inner `Flowi` message, if it exists, that may have been overriden by labels or explicit `flow` or `keyflow` messages.
 
-### `new ValidationError(message, properties)`
+#### `new ValidationError(message, properties)`
 
 - `message`: Error message.
 - `properties` (optional): Object with keys:
@@ -340,7 +337,7 @@ const validation = Flow(x => {
 });
 ```
 
-## Custom function
+### Custom function
 
 You can create your own validations for `flow` and `keyflow`.
 
@@ -413,7 +410,7 @@ Async functions are also allowed, just remember to use `validateAsync()` or `att
 ```javascript
 const validation = KeyFlow(async obj => {
     if (await usernameExistsAsync(obj.username)) {
-        return { 
+        return {
             value: obj,
             error: new ValidationError(
                 'Username already exists',
@@ -422,7 +419,7 @@ const validation = KeyFlow(async obj => {
         };
     }
     if (await emailExistsAsync(obj.email)) {
-        return { 
+        return {
             value: obj,
             error: new ValidationError(
                 'Email already exists',
