@@ -6,13 +6,13 @@
   "homepage": "https://github.com/rafamel/flowi",
   "main": "./lib/index",
   "scripts": {
-    "lint": "eslint lib/*.js",
-    "lint:test": "eslint test/*.js",
+    "lint": "eslint ./lib --ext .js",
+    "lint:test": "eslint ./test --ext .js",
     "lint:md": "markdownlint *.md --config markdown.json",
-    "test": "npm run lint:test && jest ./test/*.js --runInBand --runTestsByPath --verbose",
+    "test": "npm run lint:test && jest ./test/.*.test.js --runInBand --verbose",
     "watch": "nodemon ./node_modules/.bin/run-s lint test",
-    "pre": "npm run prepublishOnly",
-    "prepublishOnly": "run-s lint lint:* && jest ./test/*.test.js --runTestsByPath",
+    "checks": "run-s lint lint:* && jest ./test/.*.test.js && npm outdated",
+    "prepublishOnly": "npm run checks",
     "update:packages": "rm -rf node_modules && rm package-lock.json && npm update --save/save-dev && npm install && npm outdated"
   },
   "contributors": [
@@ -57,7 +57,7 @@
     "joi": "^13.0.1"
   },
   "peerDependencies": {
-    "joi": "^13.0.0"
+    "joi": "^13.0.1"
   },
   "engines": {
     "node": ">=8.0.0"
