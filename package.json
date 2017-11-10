@@ -56,9 +56,6 @@
     "is-promise": "^2.1.0",
     "joi": "^13.0.1"
   },
-  "peerDependencies": {
-    "joi": "^13.0.1"
-  },
   "engines": {
     "node": ">=8.0.0"
   },

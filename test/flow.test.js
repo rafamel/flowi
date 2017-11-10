@@ -1,6 +1,5 @@
 'use strict';
-const Joi = require('joi');
-const { Flow, ValidationError } = require('../lib');
+const { Joi, Flow, ValidationError } = require('../lib');
 
 const id = (n) => `[${ String(n) }] `;
 

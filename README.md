@@ -26,8 +26,7 @@
 ### Flow
 
 ```javascript
-const Joi = require('joi');
-const { Flow } = require('flowi');
+const { Joi, Flow } = require('flowi');
 
 const toValidate = 'example string to validate';
 
@@ -132,8 +131,7 @@ Same as [`flow.validate()`](#flowvalidatetovalidate) and [`flow.attempt()`](#flo
 ### KeyFlow
 
 ```javascript
-const Joi = require('joi');
-const { Flow, KeyFlow } = require('flowi');
+const { Joi, Flow, KeyFlow } = require('flowi');
 
 const toValidate = {
     username: 'ThisIsAnUser',
