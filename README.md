@@ -310,6 +310,7 @@ A `ValidationError` will have properties:
 - `label`: `undefined` if the label wasn't explicitly set. This can be useful if, for example, you just want to expose `ValidationError` messages if they are explicit or are not but have a label set.
 - `key`: The key the error comes from if it was part of a `keyflow` schema.
 - `note`: Original `Joi` message or inner `Flowi` message, if it exists, that may have been overriden by labels or explicit `flow` or `keyflow` messages.
+- `status`: `400` by default. If you're using *Express* and *Flowi* customs validations it can come in handy.
 
 #### `new ValidationError(message, properties)`
 
