@@ -411,6 +411,28 @@ describe(`- Require & Forbid`, () => {
             val.require(false);
             expect(val.validate({}).error).toBe(null);
         });
+        test(id(4), () => {
+            const val = KeyFlow().require(['a', 'b', 'c'], 1);
+
+            expect(val.validate({ d: 2 }).error).toBeInstanceOf(ValidationError);
+            expect(val.validate({ a: 1 }).error).toBe(null);
+        });
+        test(id(5), () => {
+            const val = KeyFlow().require(['a', 'b', 'c'], 2);
+
+            expect(val.validate({ a: 2 }).error).toBeInstanceOf(ValidationError);
+            expect(val.validate({ a: 1, b: 5 }).error).toBe(null);
+        });
+        test(id(6), () => {
+            const val = KeyFlow({ a: Joi.number(), b: Joi.number() }).require(true, 1);
+            expect(val.validate({ b: 1 }).error).toBe(null);
+
+            val.require(false);
+            expect(val.validate({}).error).toBe(null);
+        });
+        test(id(7), () => {
+            expect(() => KeyFlow().require(true, -1)).toThrowError();
+        });
     });
 
     describe(`- keyflow.forbid()`, () => {

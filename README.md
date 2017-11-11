@@ -226,11 +226,12 @@ const validation = Keyflow({
 }).use(['username', 'password']);
 ```
 
-#### `keyflow.require(keys)`
+#### `keyflow.require(keys, n)`
 
 - `keys` (optional): It can be:
     - An array of keys (as strings) to require.
     - `undefined`, or a boolean. If `undefined` or `true`, it will require all known keys; if `false`, it will not. Known keys are those defined by [`keyflow.use()`](#keyflowusekeys) or all of those that appear in any schema fed to [`Keyflow()`](#keyflowvalidation-message) or [`keyflow.and()`](#keyflowandvalidation-message), including those within a `Joi.object()` or inside inner `keyflow`s.
+- `n` (optional): Integer. To require only a set number of keys. `n = 1` would only require that one of the `keys` is present; `n = 2` would require two of them; `n = 0` would require all. Defaults to `0`.
 
 ```javascript
 // Keys 'username' and 'password' are required
