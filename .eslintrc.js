@@ -1,13 +1,16 @@
-// npm i --save-dev eslint-config-standard eslint-plugin-import eslint-plugin-node eslint-plugin-promise eslint-plugin-standard
+// npm i --save-dev eslint eslint-config-standard eslint-plugin-import eslint-plugin-jest eslint-plugin-node eslint-plugin-promise eslint-plugin-standard
 module.exports = {
     extends: 'standard',
     env: {
-      node: true
+      node: true,
+      jasmine: true,
+      jest: true
     },
+    plugins: [
+        "jest"
+    ],
     globals: {
-        "describe": true,
-        "test": true,
-        "expect": true
+
     },
     rules: {
         // Indentation
@@ -27,7 +30,7 @@ module.exports = {
         "max-len": [2, {
             "code": 90,
             "ignoreUrls": true,
-            "ignoreComments": false,
+            "ignoreComments": true,
             "ignoreStrings": true,
             "ignoreTemplateLiterals": true,
             "ignoreRegExpLiterals": true
